@@ -34,18 +34,40 @@ function initializeEventListeners() {
     document.getElementById('contactOverlay').classList.remove('active');
   });
 
-  // Mailto form submission
-  document.getElementById('contactForm').addEventListener('submit', function (e) {
+  // Search form submission
+  document.getElementById('searchSubmitBtn').addEventListener('click', () => {
+    const query = document.getElementById('searchInput').value.trim();
+    if (query) {
+      searchNews(query);
+    }
+  });
+
+  // Contact form (Formspree method)
+  document.getElementById('contactForm').addEventListener('submit', async function (e) {
     e.preventDefault();
-    const name = this.name.value;
-    const email = this.email.value;
-    const message = this.message.value;
 
-    const mailtoLink = `mailto:mdchild21@gmail.com?subject=Message from ${encodeURIComponent(name)}&body=${encodeURIComponent(message)}%0AFrom: ${encodeURIComponent(email)}`;
-    window.location.href = mailtoLink;
+    const form = e.target;
+    const formData = new FormData(form);
 
-    this.reset();
-    document.getElementById('contactOverlay').classList.remove('active');
+    try {
+      const response = await fetch(form.action, {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'Accept': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        showPopupMessage("✅ Message sent successfully!");
+        form.reset();
+        document.getElementById('contactOverlay').classList.remove('active');
+      } else {
+        showPopupMessage("❌ Failed to send message.");
+      }
+    } catch (error) {
+      showPopupMessage("❌ Network error. Try again.");
+    }
   });
 }
 
@@ -79,15 +101,11 @@ async function loadNews(category) {
     const response = await fetch(url);
     const data = await response.json();
 
-    console.log("API Response:", data); // Optional: keep this for debugging
-
     if (data.status === 'success' && Array.isArray(data.results)) {
       const filteredArticles = data.results.filter(article => article.title && article.link);
       allArticles = filteredArticles;
       displayArticles(allArticles);
       document.getElementById('articleCount').textContent = allArticles.length;
-
-      // Hide load more (pagination removed)
       document.getElementById('loadMoreContainer').style.display = 'none';
     } else {
       showError("API Error: " + (data?.results?.message || 'Unexpected response format'));
@@ -109,7 +127,7 @@ function displayArticles(articles) {
 
   const [first, ...rest] = articles;
 
-  // Featured Article
+  // Featured
   featuredContainer.innerHTML = `
     <div class="featured-grid">
       <img src="${first.image_url || getPlaceholderImage()}" class="featured-image">
@@ -122,7 +140,7 @@ function displayArticles(articles) {
     </div>`;
   featuredContainer.style.display = 'block';
 
-  // Grid Articles
+  // News Cards
   rest.forEach(article => {
     newsGrid.innerHTML += `
       <div class="news-card">
@@ -139,6 +157,36 @@ function displayArticles(articles) {
         </div>
       </div>`;
   });
+}
+
+async function searchNews(query) {
+  const searchResultsContainer = document.getElementById('searchResults');
+  searchResultsContainer.innerHTML = `<p>Searching for "${query}"...</p>`;
+
+  try {
+    const url = `${NEWS_API_BASE_URL}?apikey=${NEWS_API_KEY}&q=${encodeURIComponent(query)}&language=en`;
+    const response = await fetch(url);
+    const data = await response.json();
+
+    if (data.status === 'success' && Array.isArray(data.results)) {
+      const articles = data.results.filter(a => a.title && a.link);
+      if (articles.length === 0) {
+        searchResultsContainer.innerHTML = '<p>No results found.</p>';
+        return;
+      }
+
+      searchResultsContainer.innerHTML = articles.map(article => `
+        <div class="search-result-item">
+          <h4 class="search-result-title" onclick="window.open('${article.link}', '_blank')">${article.title}</h4>
+          <p class="search-result-description">${article.description || 'No description available.'}</p>
+        </div>
+      `).join('');
+    } else {
+      searchResultsContainer.innerHTML = '<p>Error loading search results.</p>';
+    }
+  } catch (error) {
+    searchResultsContainer.innerHTML = '<p>Error: ' + error.message + '</p>';
+  }
 }
 
 function showLoading() {
@@ -162,4 +210,17 @@ function showError(message) {
 
 function getPlaceholderImage() {
   return 'https://via.placeholder.com/800x400?text=No+Image';
+}
+
+function showPopupMessage(message) {
+  let popup = document.createElement('div');
+  popup.className = 'popup-message';
+  popup.textContent = message;
+  document.body.appendChild(popup);
+
+  setTimeout(() => popup.classList.add('show'), 100);
+  setTimeout(() => {
+    popup.classList.remove('show');
+    setTimeout(() => popup.remove(), 400);
+  }, 3000);
 }
