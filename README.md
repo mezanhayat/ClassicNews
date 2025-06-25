@@ -1,1 +1,1 @@
-# mezanhayat.github.io
+https://classicnews.live
