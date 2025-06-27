@@ -1,211 +1,205 @@
-const API_KEYS = [
-  "pub_479521869e790a727903df673ac804ca5f7dc", // Your current key
-  "demo" // Fallback demo key (limited)
+const GNEWS_API_KEYS = [
+  "d44f128c378c43722a831cc284370e0b", // Your key
+  "YOUR_SECONDARY_KEY", // Backup key
+  "demo" // Fallback (if available)
 ];
 
 let currentApiKeyIndex = 0;
 let currentCategory = "general";
-let currentPage = 1;
-const pageSize = 12;
-let isFetching = false;
+const pageSize = 10; // GNews default/max
 
 // DOM Elements
-const sectionTitle = document.getElementById("sectionTitle");
-const newsGrid = document.getElementById("newsGrid");
-const featuredArticle = document.getElementById("featuredArticle");
-const articleCount = document.getElementById("articleCount");
-const loading = document.getElementById("loading");
-const error = document.getElementById("error");
-const loadMoreBtn = document.getElementById("loadMoreBtn");
-const loadMoreContainer = document.getElementById("loadMoreContainer");
-
-// Show today's date
-document.getElementById("currentDate").textContent = new Date().toDateString();
-
-// Sample fallback data
-const fallbackNews = {
-  general: [
-    {
-      title: "Important News Update",
-      description: "This is a sample news article when the API is unavailable.",
-      image_url: "https://via.placeholder.com/600x400",
-      source_id: "Classic News",
-      pubDate: new Date().toISOString(),
-      link: "#"
-    }
-  ]
+const elements = {
+  sectionTitle: document.getElementById("sectionTitle"),
+  newsGrid: document.getElementById("newsGrid"),
+  featuredArticle: document.getElementById("featuredArticle"),
+  articleCount: document.getElementById("articleCount"),
+  loading: document.getElementById("loading"),
+  error: document.getElementById("error"),
+  loadMoreBtn: document.getElementById("loadMoreBtn")
 };
 
-async function fetchNews(category = "general", page = 1) {
-  if (isFetching) return;
-  isFetching = true;
-  
-  loading.style.display = "block";
-  error.style.display = "none";
-  loadMoreBtn.disabled = true;
+// Initialize
+document.getElementById("currentDate").textContent = new Date().toLocaleDateString();
+
+// GNews API Endpoint Builder
+function buildGNewsUrl(category, pageToken = null) {
+  const baseUrl = "https://gnews.io/api/v4/top-headlines";
+  const params = new URLSearchParams({
+    category: category === "general" ? "" : category,
+    country: "in",
+    lang: "en",
+    max: pageSize,
+    apikey: GNEWS_API_KEYS[currentApiKeyIndex],
+    ...(pageToken && { page: pageToken })
+  });
+  return `${baseUrl}?${params}`;
+}
+
+// Main Fetch Function
+async function fetchGNews(category = "general") {
+  elements.loading.style.display = "block";
+  elements.error.style.display = "none";
 
   try {
-    const validCategories = ["general", "world", "sports", "technology", "business", "entertainment"];
-    if (!validCategories.includes(category)) {
-      category = "general";
+    const url = buildGNewsUrl(category);
+    const response = await fetch(url);
+
+    // Handle HTTP errors
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || `HTTP error! status: ${response.status}`);
     }
 
-    const apiUrl = `https://newsdata.io/api/1/news?apikey=${API_KEYS[currentApiKeyIndex]}&country=in&language=en&category=${category}&page=${page}`;
+    const data = await response.json();
     
-    const res = await fetch(apiUrl);
-    
-    if (!res.ok) {
-      const errorData = await res.json().catch(() => ({}));
-      throw new Error(errorData.message || `HTTP error! status: ${res.status}`);
+    if (!data.articles || data.articles.length === 0) {
+      throw new Error("No articles found");
     }
 
-    const data = await res.json();
-    
-    if (data.status === "error") {
-      throw new Error(data.results?.message || "API returned an error");
-    }
+    renderNews(data.articles);
+    elements.articleCount.textContent = data.articles.length;
 
-    if (!data.results || !Array.isArray(data.results)) {
-      throw new Error("Unexpected response format");
-    }
-
-    const articles = data.results.filter(a => a.title && a.link);
-
-    if (articles.length === 0 && page === 1) {
-      if (currentApiKeyIndex < API_KEYS.length - 1) {
-        currentApiKeyIndex++;
-        return fetchNews(category, page);
-      }
-      showFallbackNews(category);
-      return;
-    }
-
-    if (page === 1) {
-      newsGrid.innerHTML = "";
-      if (articles.length > 0) {
-        showFeaturedArticle(articles[0]);
-        renderNewsCards(articles.slice(1));
-      }
-    } else {
-      renderNewsCards(articles);
-    }
-
-    articleCount.textContent = document.querySelectorAll(".news-card").length;
-    loadMoreContainer.style.display = articles.length >= pageSize ? "block" : "none";
   } catch (err) {
-    console.error("API Error:", err);
-    
-    if (currentApiKeyIndex < API_KEYS.length - 1) {
-      currentApiKeyIndex++;
-      return fetchNews(category, page);
-    }
-    
-    showFallbackNews(category);
-    error.style.display = "block";
-    error.innerHTML = `
-      <p>Failed to load news articles</p>
-      <p><small>${err.message || "Service temporarily unavailable"}</small></p>
-      <button class="btn-primary" onclick="location.reload()">Try Again</button>
-    `;
+    handleGNewsError(err);
   } finally {
-    loading.style.display = "none";
-    loadMoreBtn.disabled = false;
-    isFetching = false;
+    elements.loading.style.display = "none";
   }
 }
 
-function showFallbackNews(category) {
-  const articles = fallbackNews[category] || fallbackNews.general;
-  newsGrid.innerHTML = "";
-  showFeaturedArticle(articles[0]);
-  if (articles.length > 1) {
-    renderNewsCards(articles.slice(1));
-  }
-  loadMoreContainer.style.display = "none";
-  articleCount.textContent = articles.length;
-}
+// Render News
+function renderNews(articles) {
+  // Clear existing content
+  elements.newsGrid.innerHTML = "";
+  elements.featuredArticle.innerHTML = "";
 
-function showFeaturedArticle(article) {
-  featuredArticle.style.display = "block";
-  featuredArticle.innerHTML = `
-    <div class="featured-grid">
-      <img class="featured-image" src="${article.image_url || "https://via.placeholder.com/600x400"}" alt="${article.title}" onerror="this.src='https://via.placeholder.com/600x400'"/>
-      <div class="featured-content">
-        <div class="featured-tag">${article.source_id || "Source"}</div>
-        <h2 class="featured-title">${article.title}</h2>
-        <p class="featured-description">${article.description || ""}</p>
-        <div class="featured-meta">
-          <div class="article-meta">${new Date(article.pubDate).toLocaleDateString() || "Today"}</div>
-          <a href="${article.link}" target="_blank" class="read-more-btn">Read More</a>
+  // Featured article (first item)
+  if (articles.length > 0) {
+    const featured = articles[0];
+    elements.featuredArticle.innerHTML = `
+      <div class="featured-grid">
+        <img src="${featured.image || getPlaceholderImage('featured')}" 
+             alt="${featured.title}" 
+             onerror="this.src='${getPlaceholderImage('featured')}'">
+        <div class="featured-content">
+          <div class="featured-tag">${featured.source.name || "Source"}</div>
+          <h2>${featured.title}</h2>
+          <p>${featured.description || ""}</p>
+          <div class="featured-meta">
+            <span>${formatDate(featured.publishedAt)}</span>
+            <a href="${featured.url}" target="_blank">Read Full Story</a>
+          </div>
         </div>
       </div>
-    </div>
-  `;
-}
+    `;
+    elements.featuredArticle.style.display = "block";
+  }
 
-function renderNewsCards(articles) {
-  articles.forEach(article => {
+  // Regular articles
+  articles.slice(1).forEach(article => {
     const card = document.createElement("div");
     card.className = "news-card";
     card.innerHTML = `
       <div class="news-image-container">
-        <img class="news-image" src="${article.image_url || "https://via.placeholder.com/400x200"}" alt="${article.title}" onerror="this.src='https://via.placeholder.com/400x200'"/>
-        <div class="news-source-tag">${article.source_id || "Source"}</div>
+        <img src="${article.image || getPlaceholderImage('card')}" 
+             alt="${article.title}"
+             onerror="this.src='${getPlaceholderImage('card')}'">
+        <div class="news-source-tag">${article.source.name || "Source"}</div>
       </div>
       <div class="news-content">
-        <h3 class="news-title">${article.title}</h3>
-        <p class="news-description">${article.description || ""}</p>
+        <h3>${article.title}</h3>
+        <p>${truncateText(article.description || "", 100)}</p>
         <div class="news-footer">
-          <span class="news-date">${new Date(article.pubDate).toLocaleDateString() || "Today"}</span>
-          <a href="${article.link}" target="_blank" class="read-more-btn">Read More</a>
+          <span>${formatDate(article.publishedAt)}</span>
+          <a href="${article.url}" target="_blank">Read More</a>
         </div>
       </div>
     `;
-    newsGrid.appendChild(card);
+    elements.newsGrid.appendChild(card);
   });
+}
+
+// Error Handling
+function handleGNewsError(error) {
+  console.error("GNews Error:", error);
+  
+  // Key rotation
+  if (error.message.includes("API key") && currentApiKeyIndex < GNEWS_API_KEYS.length - 1) {
+    currentApiKeyIndex++;
+    return fetchGNews(currentCategory);
+  }
+
+  // Show error to user
+  elements.error.innerHTML = `
+    <div class="error-content">
+      <i class="fas fa-exclamation-triangle"></i>
+      <p>${getUserFriendlyError(error)}</p>
+      <button class="retry-btn" onclick="fetchGNews(currentCategory)">
+        <i class="fas fa-sync-alt"></i> Try Again
+      </button>
+    </div>
+  `;
+  elements.error.style.display = "block";
+
+  // Fallback content
+  if (elements.newsGrid.children.length === 0) {
+    showFallbackContent();
+  }
+}
+
+// Helper Functions
+function getPlaceholderImage(type = "card") {
+  const sizes = {
+    featured: "600x400",
+    card: "400x200"
+  };
+  return `https://via.placeholder.com/${sizes[type]}?text=Classic+News`;
+}
+
+function formatDate(dateString) {
+  if (!dateString) return "Today";
+  const options = { year: 'numeric', month: 'short', day: 'numeric' };
+  return new Date(dateString).toLocaleDateString("en-US", options);
+}
+
+function truncateText(text, length) {
+  return text.length > length ? `${text.substring(0, length)}...` : text;
+}
+
+function getUserFriendlyError(error) {
+  if (error.message.includes("quota")) return "Daily limit reached";
+  if (error.message.includes("API key")) return "Service unavailable";
+  if (error.message.includes("No articles")) return "No news found for this category";
+  return "Failed to load news. Please try again later.";
+}
+
+function showFallbackContent() {
+  elements.newsGrid.innerHTML = `
+    <div class="fallback-news">
+      <h3>Latest Updates</h3>
+      <ul>
+        <li>Global leaders meet for climate summit</li>
+        <li>Tech innovations announced at CES</li>
+        <li>Sports team wins national championship</li>
+      </ul>
+      <p>Full news service will resume shortly</p>
+    </div>
+  `;
 }
 
 // Event Listeners
 document.querySelectorAll(".nav-btn, .category-btn").forEach(btn => {
   btn.addEventListener("click", () => {
-    const category = btn.dataset.category;
-    currentCategory = category;
-    currentPage = 1;
-    sectionTitle.textContent = category.toUpperCase();
-    fetchNews(category, 1);
-    document.querySelectorAll(".nav-btn, .category-btn").forEach(b => b.classList.remove("active"));
+    currentCategory = btn.dataset.category;
+    elements.sectionTitle.textContent = btn.textContent;
+    fetchGNews(currentCategory);
+    
+    // Update active state
+    document.querySelectorAll(".nav-btn, .category-btn").forEach(b => 
+      b.classList.remove("active"));
     btn.classList.add("active");
   });
 });
 
-loadMoreBtn.addEventListener("click", () => {
-  currentPage++;
-  fetchNews(currentCategory, currentPage);
-});
-
-// Overlays for search and contact
-document.getElementById("searchBtn").onclick = () => {
-  document.getElementById("searchOverlay").classList.add("active");
-};
-document.getElementById("closeSearch").onclick = () => {
-  document.getElementById("searchOverlay").classList.remove("active");
-};
-
-document.getElementById("contactBtn").onclick = () => {
-  document.getElementById("contactOverlay").classList.add("active");
-};
-document.getElementById("closeContact").onclick = () => {
-  document.getElementById("contactOverlay").classList.remove("active");
-};
-
-// Go to top
-const goToTopBtn = document.getElementById("goToTopBtn");
-window.addEventListener("scroll", () => {
-  goToTopBtn.classList.toggle("visible", window.scrollY > 300);
-});
-goToTopBtn.addEventListener("click", () => {
-  window.scrollTo({ top: 0, behavior: "smooth" });
-});
-
-// Initial load
-fetchNews(currentCategory, currentPage);
+// Initialize
+fetchGNews(currentCategory);
