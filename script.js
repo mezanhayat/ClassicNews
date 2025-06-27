@@ -21,21 +21,21 @@ document.getElementById("currentDate").textContent = new Date().toLocaleDateStri
   day: 'numeric'
 });
 
-// Fallback news data in case API fails
+// Fallback news data
 const fallbackNews = {
   results: [
     {
-      title: "Important News Update",
+      title: "Latest News Updates",
       link: "#",
-      description: "Our news service is currently experiencing high demand. Please check back soon for the latest updates.",
+      description: "Stay tuned for breaking news updates coming soon.",
       image_url: "https://via.placeholder.com/600x400",
       source_id: "Classic Times",
       pubDate: new Date().toISOString()
     },
     {
-      title: "Stay Informed",
+      title: "Important Announcements",
       link: "#",
-      description: "We're working to bring you the latest news as quickly as possible.",
+      description: "We're working to bring you the latest news coverage.",
       image_url: "https://via.placeholder.com/400x200",
       source_id: "Classic Times",
       pubDate: new Date().toISOString()
@@ -43,56 +43,79 @@ const fallbackNews = {
   ]
 };
 
+// Main news fetching function
 async function fetchNews(category = "general", page = 1) {
   loading.style.display = "block";
   error.style.display = "none";
   loadMoreBtn.disabled = true;
 
   try {
-    // Try both with and without CORS proxy
-    let apiUrl = `https://newsdata.io/api/1/news?apikey=${API_KEY}&country=in&language=en&category=${category}&page=${page}`;
+    const encodedCategory = encodeURIComponent(category);
+    const apiUrl = `https://newsdata.io/api/1/news?apikey=${API_KEY}&country=in&language=en&category=${encodedCategory}&page=${page}`;
     
-    // First try direct API call
-    let response = await fetchWithTimeout(apiUrl);
+    console.log("Fetching news from:", apiUrl);
     
-    // If direct call fails, try with CORS proxy
+    const response = await fetchWithTimeout(apiUrl, 8000);
+    
     if (!response.ok) {
-      apiUrl = `https://cors-anywhere.herokuapp.com/${apiUrl}`;
-      response = await fetchWithTimeout(apiUrl);
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+
+    const contentType = response.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      throw new Error("Invalid response format");
     }
 
     const data = await response.json();
+    console.log("API response:", data);
 
-    if (!data.results || data.results.length === 0) {
-      // If no results, use fallback data
-      console.log("Using fallback news data");
-      renderNews(fallbackNews, category, page);
-    } else {
-      renderNews(data, category, page);
+    if (!data.results || !Array.isArray(data.results)) {
+      throw new Error("Invalid data structure");
     }
+
+    const articles = data.results.filter(a => a.title && a.link);
+
+    if (articles.length === 0 && page === 1) {
+      throw new Error("No articles found");
+    }
+
+    renderNews(data, category, page);
   } catch (err) {
-    console.error("Fetch error:", err);
-    // Use fallback data if API fails
+    console.error("News fetch error:", err);
+    error.style.display = "block";
+    error.innerHTML = `
+      <p>Failed to load news articles</p>
+      <p><small>${err.message}</small></p>
+      <button class="btn-primary" onclick="fetchNews(currentCategory, currentPage)">Try Again</button>
+    `;
     renderNews(fallbackNews, category, page);
-    showPopup("Couldn't load latest news. Showing cached content.", true);
   } finally {
     loading.style.display = "none";
     loadMoreBtn.disabled = false;
   }
 }
 
-async function fetchWithTimeout(url, timeout = 8000) {
+// Helper function with timeout
+async function fetchWithTimeout(url, timeout) {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeout);
   
-  const response = await fetch(url, {
-    signal: controller.signal
-  });
-  
-  clearTimeout(timeoutId);
-  return response;
+  try {
+    const response = await fetch(url, {
+      signal: controller.signal,
+      headers: {
+        'Accept': 'application/json'
+      }
+    });
+    clearTimeout(timeoutId);
+    return response;
+  } catch (err) {
+    clearTimeout(timeoutId);
+    throw err;
+  }
 }
 
+// Render news articles
 function renderNews(data, category, page) {
   const articles = data.results.filter(a => a.title && a.link);
 
@@ -106,17 +129,21 @@ function renderNews(data, category, page) {
     renderNewsCards(articles);
   }
 
-  articleCount.textContent = document.querySelectorAll(".news-card").length + 
-                           (featuredArticle.style.display !== "none" ? 1 : 0);
+  const totalArticles = document.querySelectorAll(".news-card").length + 
+                       (featuredArticle.style.display !== "none" ? 1 : 0);
+  articleCount.textContent = totalArticles;
   loadMoreContainer.style.display = articles.length >= pageSize ? "block" : "none";
 }
 
+// Show featured article
 function showFeaturedArticle(article) {
   featuredArticle.style.display = "block";
   featuredArticle.innerHTML = `
     <div class="featured-grid">
-      <img class="featured-image" src="${article.image_url || "https://via.placeholder.com/600x400"}" 
-           alt="${article.title}" onerror="this.src='https://via.placeholder.com/600x400'">
+      <div class="featured-image-container">
+        <img class="featured-image" src="${article.image_url || "https://via.placeholder.com/600x400"}" 
+             alt="${article.title}" onerror="this.src='https://via.placeholder.com/600x400'">
+      </div>
       <div class="featured-content">
         <div class="featured-tag">${article.source_id || "Source"}</div>
         <h2 class="featured-title">${article.title}</h2>
@@ -130,6 +157,7 @@ function showFeaturedArticle(article) {
   `;
 }
 
+// Render news cards
 function renderNewsCards(articles) {
   articles.forEach(article => {
     const card = document.createElement("div");
@@ -153,6 +181,7 @@ function renderNewsCards(articles) {
   });
 }
 
+// Format date
 function formatDate(dateString) {
   try {
     const date = new Date(dateString);
@@ -162,7 +191,7 @@ function formatDate(dateString) {
   }
 }
 
-// Message notification system
+// Notification system
 function showPopup(message, isError = false) {
   const popup = document.createElement("div");
   popup.className = `popup-message ${isError ? 'error' : ''}`;
@@ -172,12 +201,8 @@ function showPopup(message, isError = false) {
   `;
   document.body.appendChild(popup);
   
-  // Close button functionality
-  popup.querySelector(".popup-close").addEventListener("click", () => {
-    popup.remove();
-  });
+  popup.querySelector(".popup-close").addEventListener("click", () => popup.remove());
   
-  // Auto-hide after 5 seconds
   setTimeout(() => {
     popup.classList.add("show");
     setTimeout(() => {
@@ -187,7 +212,7 @@ function showPopup(message, isError = false) {
   }, 10);
 }
 
-// Contact form submission
+// Contact form handler
 document.getElementById("contactForm").addEventListener("submit", async (e) => {
   e.preventDefault();
   const form = e.target;
@@ -211,7 +236,7 @@ document.getElementById("contactForm").addEventListener("submit", async (e) => {
       form.reset();
       document.getElementById("contactOverlay").classList.remove("active");
     } else {
-      throw new Error("Failed to send message");
+      throw new Error("Server responded with error");
     }
   } catch (err) {
     console.error("Form error:", err);
@@ -222,7 +247,7 @@ document.getElementById("contactForm").addEventListener("submit", async (e) => {
   }
 });
 
-// Rest of your existing navigation and UI code...
+// Navigation buttons
 document.querySelectorAll(".nav-btn, .category-btn").forEach(btn => {
   btn.addEventListener("click", () => {
     const category = btn.dataset.category;
@@ -235,38 +260,49 @@ document.querySelectorAll(".nav-btn, .category-btn").forEach(btn => {
   });
 });
 
+// Load more articles
 loadMoreBtn.addEventListener("click", () => {
   currentPage++;
   fetchNews(currentCategory, currentPage);
 });
 
-// Initial load
-fetchNews(currentCategory, currentPage);
+// Mobile menu toggle
+document.getElementById("mobileMenuBtn").addEventListener("click", () => {
+  document.getElementById("mobileMenuOverlay").classList.add("active");
+});
 
-// Overlays for search and contact
-document.getElementById("searchBtn").onclick = () => {
+// Overlay controls
+document.getElementById("closeMobileMenu").addEventListener("click", () => {
+  document.getElementById("mobileMenuOverlay").classList.remove("active");
+});
+
+document.getElementById("searchBtn").addEventListener("click", () => {
   document.getElementById("searchOverlay").classList.add("active");
-};
-document.getElementById("closeSearch").onclick = () => {
+});
+
+document.getElementById("closeSearch").addEventListener("click", () => {
   document.getElementById("searchOverlay").classList.remove("active");
-};
+});
 
-document.getElementById("contactBtn").onclick = () => {
+document.getElementById("contactBtn").addEventListener("click", () => {
   document.getElementById("contactOverlay").classList.add("active");
-};
-document.getElementById("closeContact").onclick = () => {
-  document.getElementById("contactOverlay").classList.remove("active");
-};
+});
 
-// Go to top
+document.getElementById("closeContact").addEventListener("click", () => {
+  document.getElementById("contactOverlay").classList.remove("active");
+});
+
+// Scroll to top
 const goToTopBtn = document.getElementById("goToTopBtn");
 window.addEventListener("scroll", () => {
-  if (window.scrollY > 300) {
-    goToTopBtn.classList.add("visible");
-  } else {
-    goToTopBtn.classList.remove("visible");
-  }
+  goToTopBtn.classList.toggle("visible", window.scrollY > 300);
 });
+
 goToTopBtn.addEventListener("click", () => {
   window.scrollTo({ top: 0, behavior: "smooth" });
+});
+
+// Initial load
+document.addEventListener('DOMContentLoaded', () => {
+  fetchNews(currentCategory, currentPage);
 });
