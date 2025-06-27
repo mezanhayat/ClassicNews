@@ -12,6 +12,16 @@ const loading = document.getElementById("loading");
 const error = document.getElementById("error");
 const loadMoreBtn = document.getElementById("loadMoreBtn");
 const loadMoreContainer = document.getElementById("loadMoreContainer");
+const searchBtn = document.getElementById("searchBtn");
+const searchOverlay = document.getElementById("searchOverlay");
+const closeSearch = document.getElementById("closeSearch");
+const contactBtn = document.getElementById("contactBtn");
+const contactOverlay = document.getElementById("contactOverlay");
+const closeContact = document.getElementById("closeContact");
+const mobileMenuBtn = document.getElementById("mobileMenuBtn");
+const mobileMenuOverlay = document.createElement("div");
+const mobileMenu = document.createElement("div");
+const navDesktop = document.querySelector(".nav-desktop");
 
 // Show today's date
 document.getElementById("currentDate").textContent = new Date().toLocaleDateString('en-US', {
@@ -43,97 +53,76 @@ const fallbackNews = {
   ]
 };
 
-async function fetchNews(category = "general", page = 1) {
-  loading.style.display = "block";
-  error.style.display = "none";
-  loadMoreBtn.disabled = true;
-
-  try {
-    // Validate and normalize category
-    const validCategories = ["general", "world", "sports", "technology", "business", "entertainment"];
-    const normalizedCategory = validCategories.includes(category) ? category : "general";
-
-    // Build API URL with required parameters
-    const apiUrl = new URL("https://newsdata.io/api/1/news");
-    apiUrl.searchParams.append("apikey", API_KEY);
-    apiUrl.searchParams.append("country", "us,in,gb"); // Multiple countries for better results
-    apiUrl.searchParams.append("language", "en");
-    
-    // Only add category if not 'general'
-    if (normalizedCategory !== "general") {
-      apiUrl.searchParams.append("category", normalizedCategory);
-    }
-    
-    // Add pagination parameters
-    apiUrl.searchParams.append("page", page);
-    
-    console.log("Fetching:", apiUrl.toString());
-
-    const response = await fetchWithTimeout(apiUrl.toString(), 8000);
-    
-    if (!response.ok) {
-      // Try to get error details from response
-      let errorMsg = `HTTP error! Status: ${response.status}`;
-      try {
-        const errorData = await response.json();
-        errorMsg = errorData.message || errorData.error || errorMsg;
-      } catch (e) {
-        console.log("Couldn't parse error response");
-      }
-      throw new Error(errorMsg);
-    }
-
-    const data = await response.json();
-
-    if (!data.results || !Array.isArray(data.results)) {
-      throw new Error("Invalid data format from API");
-    }
-
-    const articles = data.results.filter(a => a.title && a.link);
-
-    if (articles.length === 0 && page === 1) {
-      throw new Error("No articles found for this category");
-    }
-
-    renderNews(data, normalizedCategory, page);
-  } catch (err) {
-    console.error("News fetch error:", err);
-    error.style.display = "block";
-    error.innerHTML = `
-      <p>${err.message.includes("422") ? "News service configuration issue" : "Failed to load news"}</p>
-      <p><small>${err.message.replace("HTTP error! Status: 422", "Please try a different category")}</small></p>
-      <button class="btn-primary" onclick="fetchNews(currentCategory, 1)">Try Again</button>
-    `;
-    renderNews(fallbackNews, category, page);
-  } finally {
-    loading.style.display = "none";
-    loadMoreBtn.disabled = false;
-  }
-}
-
-async function fetchWithTimeout(url, timeout) {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeout);
+// Initialize mobile menu
+function initMobileMenu() {
+  mobileMenuOverlay.className = "mobile-menu-overlay";
+  mobileMenu.className = "mobile-menu";
   
-  try {
-    const response = await fetch(url, {
-      signal: controller.signal,
-      headers: {
-        'Accept': 'application/json'
-      }
+  const menuHeader = document.createElement("div");
+  menuHeader.className = "mobile-menu-header";
+  menuHeader.innerHTML = `
+    <h3>Menu</h3>
+    <button class="close-btn">&times;</button>
+  `;
+  
+  const menuContent = document.createElement("div");
+  menuContent.className = "mobile-menu-content";
+  menuContent.innerHTML = `
+    <button class="mobile-nav-btn active" data-category="top">HOME</button>
+    <button class="mobile-nav-btn" data-category="world">INTERNATIONAL</button>
+    <button class="mobile-nav-btn" data-category="sports">SPORTS</button>
+    <button class="mobile-nav-btn" data-category="technology">TECHNOLOGY</button>
+    <button class="mobile-nav-btn" data-category="business">BUSINESS</button>
+    <button class="mobile-nav-btn" data-category="entertainment">ENTERTAINMENT</button>
+  `;
+  
+  mobileMenu.appendChild(menuHeader);
+  mobileMenu.appendChild(menuContent);
+  mobileMenuOverlay.appendChild(mobileMenu);
+  document.body.appendChild(mobileMenuOverlay);
+  
+  // Close mobile menu
+  menuHeader.querySelector(".close-btn").addEventListener("click", () => {
+    mobileMenuOverlay.classList.remove("active");
+  });
+  
+  // Mobile menu category buttons
+  menuContent.querySelectorAll(".mobile-nav-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const category = btn.dataset.category;
+      currentCategory = category === "top" ? "general" : category;
+      currentPage = 1;
+      fetchNews(currentCategory, currentPage);
+      mobileMenuOverlay.classList.remove("active");
     });
-    clearTimeout(timeoutId);
-    return response;
-  } catch (err) {
-    clearTimeout(timeoutId);
-    throw err;
-  }
+  });
 }
 
-// [Include all other existing functions: renderNews, showFeaturedArticle, 
-// renderNewsCards, formatDate, showPopup, etc. exactly as shown in previous examples]
-
-// Initialize the page
-document.addEventListener('DOMContentLoaded', () => {
-  fetchNews(currentCategory, currentPage);
-});
+// Event listeners
+function setupEventListeners() {
+  // Navigation buttons
+  document.querySelectorAll(".nav-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelector(".nav-btn.active").classList.remove("active");
+      btn.classList.add("active");
+      
+      const category = btn.dataset.category;
+      currentCategory = category === "top" ? "general" : category;
+      currentPage = 1;
+      fetchNews(currentCategory, currentPage);
+    });
+  });
+  
+  // Category buttons
+  document.querySelectorAll(".category-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelector(".category-btn.active").classList.remove("active");
+      btn.classList.add("active");
+      
+      const category = btn.dataset.category;
+      currentCategory = category === "top" ? "general" : category;
+      currentPage = 1;
+      fetchNews(currentCategory, currentPage);
+    });
+  });
+  
