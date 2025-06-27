@@ -956,3 +956,16 @@ body {
     background: linear-gradient(to bottom, transparent 60%, rgba(0,0,0,0.3));
     z-index: 1;
 }
+
+
+
+
+/* Add smooth loading transitions */
+.news-card img, .featured-grid img {
+  transition: opacity 0.3s ease;
+  opacity: 0;
+}
+
+.news-card img.loaded, .featured-grid img.loaded {
+  opacity: 1;
+}
