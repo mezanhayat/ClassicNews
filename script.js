@@ -1,5 +1,5 @@
 const API_KEY = "pub_479521869e790a727903df673ac804ca5f7dc";
-let currentCategory = "general";
+let currentCategory = "top";  // ✅ Works
 let currentPage = 1;
 const pageSize = 12;
 
