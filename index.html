@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
-<head><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet"/>  
+<head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <meta name="description" content="Classic Times - Your trusted source for breaking news, in-depth analysis, and comprehensive coverage of global events.">
@@ -38,15 +38,15 @@
       </div>
       <nav class="nav">
         <div class="nav-desktop">
-          <button class="nav-btn active" data-category="top">HOME</button>
+          <button class="nav-btn active" data-category="general">HOME</button>
           <button class="nav-btn" data-category="world">INTERNATIONAL</button>
           <button class="nav-btn" data-category="sports">SPORTS</button>
           <button class="nav-btn" data-category="technology">TECHNOLOGY</button>
           <button class="nav-btn" data-category="business">BUSINESS</button>
           <button class="nav-btn" data-category="entertainment">ENTERTAINMENT</button>
         </div>
-           <button class="mobile-menu-btn" id="mobileMenuBtn">
-        <i class="fas fa-bars"></i>
+        <button class="mobile-menu-btn" id="mobileMenuBtn">
+          <i class="fas fa-bars"></i>
         </button>
       </nav>
     </div>
@@ -102,7 +102,7 @@
           <div class="sidebar-section">
             <h3 class="sidebar-title">Categories</h3>
             <div class="category-list">
-              <button class="category-btn active" data-category="top">General News</button>
+              <button class="category-btn active" data-category="general">General News</button>
               <button class="category-btn" data-category="world">International</button>
               <button class="category-btn" data-category="sports">Sports</button>
               <button class="category-btn" data-category="technology">Technology</button>
@@ -195,15 +195,15 @@
       <form id="contactForm" class="contact-form" action="https://formspree.io/f/mkgbqjoo" method="POST">
         <div class="form-group">
           <label for="name">Name</label>
-          <input type="text" name="name" required />
+          <input type="text" name="name" id="name" required />
         </div>
         <div class="form-group">
           <label for="email">Email</label>
-          <input type="email" name="email" required />
+          <input type="email" name="email" id="email" required />
         </div>
         <div class="form-group">
           <label for="message">Message</label>
-          <textarea name="message" rows="5" required></textarea>
+          <textarea name="message" id="message" rows="5" required></textarea>
         </div>
         <button type="submit" class="btn-primary">Send Message</button>
       </form>
