@@ -1,300 +1,272 @@
-const GNEWS_API_KEYS = [
-  "d44f128c378c43722a831cc284370e0b", // Your key
-  "YOUR_SECONDARY_KEY", // Backup key
-  "demo" // Fallback (if available)
-];
-
-let currentApiKeyIndex = 0;
+const API_KEY = "pub_479521869e790a727903df673ac804ca5f7dc";
 let currentCategory = "general";
 let currentPage = 1;
-const pageSize = 4; // Load 4 articles at a time
+const pageSize = 12;
 
 // DOM Elements
-const elements = {
-  sectionTitle: document.getElementById("sectionTitle"),
-  newsGrid: document.getElementById("newsGrid"),
-  featuredArticle: document.getElementById("featuredArticle"),
-  articleCount: document.getElementById("articleCount"),
-  loading: document.getElementById("loading"),
-  error: document.getElementById("error"),
-  loadMoreBtn: document.getElementById("loadMoreBtn"),
-  searchOverlay: document.getElementById("searchOverlay"),
-  searchInput: document.getElementById("searchInput"),
-  searchResults: document.getElementById("searchResults"),
-  contactOverlay: document.getElementById("contactOverlay"),
-  contactForm: document.getElementById("contactForm")
+const sectionTitle = document.getElementById("sectionTitle");
+const newsGrid = document.getElementById("newsGrid");
+const featuredArticle = document.getElementById("featuredArticle");
+const articleCount = document.getElementById("articleCount");
+const loading = document.getElementById("loading");
+const error = document.getElementById("error");
+const loadMoreBtn = document.getElementById("loadMoreBtn");
+const loadMoreContainer = document.getElementById("loadMoreContainer");
+
+// Show today's date
+document.getElementById("currentDate").textContent = new Date().toLocaleDateString('en-US', {
+  weekday: 'long',
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric'
+});
+
+// Fallback news data in case API fails
+const fallbackNews = {
+  results: [
+    {
+      title: "Important News Update",
+      link: "#",
+      description: "Our news service is currently experiencing high demand. Please check back soon for the latest updates.",
+      image_url: "https://via.placeholder.com/600x400",
+      source_id: "Classic Times",
+      pubDate: new Date().toISOString()
+    },
+    {
+      title: "Stay Informed",
+      link: "#",
+      description: "We're working to bring you the latest news as quickly as possible.",
+      image_url: "https://via.placeholder.com/400x200",
+      source_id: "Classic Times",
+      pubDate: new Date().toISOString()
+    }
+  ]
 };
 
-// Initialize
-document.getElementById("currentDate").textContent = new Date().toLocaleDateString();
-
-// GNews API Endpoint Builder
-function buildGNewsUrl(category, page = null, searchQuery = null) {
-  const baseUrl = "https://gnews.io/api/v4/top-headlines";
-  const params = new URLSearchParams({
-    q: searchQuery || "",
-    category: category === "general" ? "" : category,
-    country: "in",
-    lang: "en",
-    max: pageSize,
-    page: page || 1,
-    apikey: GNEWS_API_KEYS[currentApiKeyIndex]
-  });
-  return `${baseUrl}?${params}`;
-}
-
-// Main Fetch Function
-async function fetchGNews(category = "general", page = 1, searchQuery = null) {
-  elements.loading.style.display = "block";
-  elements.error.style.display = "none";
-  elements.loadMoreBtn.disabled = true;
+async function fetchNews(category = "general", page = 1) {
+  loading.style.display = "block";
+  error.style.display = "none";
+  loadMoreBtn.disabled = true;
 
   try {
-    const url = buildGNewsUrl(category, page, searchQuery);
-    const response = await fetch(url);
-
+    // Try both with and without CORS proxy
+    let apiUrl = `https://newsdata.io/api/1/news?apikey=${API_KEY}&country=in&language=en&category=${category}&page=${page}`;
+    
+    // First try direct API call
+    let response = await fetchWithTimeout(apiUrl);
+    
+    // If direct call fails, try with CORS proxy
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || `HTTP error! status: ${response.status}`);
+      apiUrl = `https://cors-anywhere.herokuapp.com/${apiUrl}`;
+      response = await fetchWithTimeout(apiUrl);
     }
 
     const data = await response.json();
-    
-    if (!data.articles || data.articles.length === 0) {
-      if (page === 1) throw new Error("No articles found");
-      return false; // No more articles
-    }
 
-    if (page === 1) {
-      elements.newsGrid.innerHTML = "";
-      if (data.articles.length > 0) {
-        showFeaturedArticle(data.articles[0]);
-        renderNewsCards(data.articles.slice(1));
-      }
+    if (!data.results || data.results.length === 0) {
+      // If no results, use fallback data
+      console.log("Using fallback news data");
+      renderNews(fallbackNews, category, page);
     } else {
-      renderNewsCards(data.articles);
+      renderNews(data, category, page);
     }
-
-    elements.articleCount.textContent = document.querySelectorAll(".news-card").length + 1;
-    return true;
-
   } catch (err) {
-    handleGNewsError(err);
-    return false;
+    console.error("Fetch error:", err);
+    // Use fallback data if API fails
+    renderNews(fallbackNews, category, page);
+    showPopup("Couldn't load latest news. Showing cached content.", true);
   } finally {
-    elements.loading.style.display = "none";
-    elements.loadMoreBtn.disabled = false;
+    loading.style.display = "none";
+    loadMoreBtn.disabled = false;
   }
 }
 
-// Search Functionality
-async function searchNews(query) {
-  elements.loading.style.display = "block";
-  elements.searchResults.innerHTML = "";
+async function fetchWithTimeout(url, timeout = 8000) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeout);
+  
+  const response = await fetch(url, {
+    signal: controller.signal
+  });
+  
+  clearTimeout(timeoutId);
+  return response;
+}
 
-  try {
-    const url = `https://gnews.io/api/v4/search?q=${encodeURIComponent(query)}&lang=en&country=in&max=10&apikey=${GNEWS_API_KEYS[currentApiKeyIndex]}`;
-    const response = await fetch(url);
+function renderNews(data, category, page) {
+  const articles = data.results.filter(a => a.title && a.link);
 
-    if (!response.ok) {
-      throw new Error(`Search failed: ${response.status}`);
+  if (page === 1) {
+    newsGrid.innerHTML = "";
+    if (articles.length > 0) {
+      showFeaturedArticle(articles[0]);
+      renderNewsCards(articles.slice(1));
     }
+  } else {
+    renderNewsCards(articles);
+  }
 
-    const data = await response.json();
-    
-    if (!data.articles || data.articles.length === 0) {
-      elements.searchResults.innerHTML = `<p class="no-results">No results found for "${query}"</p>`;
-      return;
-    }
+  articleCount.textContent = document.querySelectorAll(".news-card").length + 
+                           (featuredArticle.style.display !== "none" ? 1 : 0);
+  loadMoreContainer.style.display = articles.length >= pageSize ? "block" : "none";
+}
 
-    data.articles.forEach(article => {
-      const resultItem = document.createElement("div");
-      resultItem.className = "search-result-item";
-      resultItem.innerHTML = `
-        <h4 class="search-result-title">${article.title}</h4>
-        <p class="search-result-description">${truncateText(article.description || "", 120)}</p>
-        <div class="search-result-footer">
-          <span class="search-result-source">${article.source.name || "Unknown"}</span>
-          <a href="${article.url}" target="_blank" class="read-more-btn">Read More</a>
+function showFeaturedArticle(article) {
+  featuredArticle.style.display = "block";
+  featuredArticle.innerHTML = `
+    <div class="featured-grid">
+      <img class="featured-image" src="${article.image_url || "https://via.placeholder.com/600x400"}" 
+           alt="${article.title}" onerror="this.src='https://via.placeholder.com/600x400'">
+      <div class="featured-content">
+        <div class="featured-tag">${article.source_id || "Source"}</div>
+        <h2 class="featured-title">${article.title}</h2>
+        <p class="featured-description">${article.description || "No description available."}</p>
+        <div class="featured-meta">
+          <div class="article-meta">${formatDate(article.pubDate)}</div>
+          <a href="${article.link}" target="_blank" class="read-more-btn">Read More</a>
         </div>
-      `;
-      elements.searchResults.appendChild(resultItem);
-    });
-
-  } catch (err) {
-    elements.searchResults.innerHTML = `<p class="error-message">Failed to search: ${err.message}</p>`;
-  } finally {
-    elements.loading.style.display = "none";
-  }
+      </div>
+    </div>
+  `;
 }
 
-// Contact Form Handling
-function setupContactForm() {
-  elements.contactForm.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const submitBtn = elements.contactForm.querySelector('button[type="submit"]');
-    submitBtn.disabled = true;
-    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
-
-    try {
-      const formData = new FormData(elements.contactForm);
-      const response = await fetch("https://formspree.io/f/mkgbqjoo", {
-        method: "POST",
-        body: formData,
-        headers: {
-          'Accept': 'application/json'
-        }
-      });
-
-      if (response.ok) {
-        showPopupMessage("Message sent successfully!");
-        elements.contactForm.reset();
-        document.getElementById("contactOverlay").classList.remove("active");
-      } else {
-        throw new Error("Failed to send message");
-      }
-    } catch (err) {
-      showPopupMessage("Failed to send message. Please try again.", true);
-    } finally {
-      submitBtn.disabled = false;
-      submitBtn.innerHTML = 'Send Message';
-    }
+function renderNewsCards(articles) {
+  articles.forEach(article => {
+    const card = document.createElement("div");
+    card.className = "news-card";
+    card.innerHTML = `
+      <div class="news-image-container">
+        <img class="news-image" src="${article.image_url || "https://via.placeholder.com/400x200"}" 
+             alt="${article.title}" onerror="this.src='https://via.placeholder.com/400x200'">
+        <div class="news-source-tag">${article.source_id || "Source"}</div>
+      </div>
+      <div class="news-content">
+        <h3 class="news-title">${article.title}</h3>
+        <p class="news-description">${article.description || "No description available."}</p>
+        <div class="news-footer">
+          <span class="news-date">${formatDate(article.pubDate)}</span>
+          <a href="${article.link}" target="_blank" class="read-more-btn">Read More</a>
+        </div>
+      </div>
+    `;
+    newsGrid.appendChild(card);
   });
 }
 
-// Helper Functions
-function showPopupMessage(message, isError = false) {
+function formatDate(dateString) {
+  try {
+    const date = new Date(dateString);
+    return isNaN(date.getTime()) ? "Recent" : date.toLocaleDateString();
+  } catch {
+    return "Recent";
+  }
+}
+
+// Message notification system
+function showPopup(message, isError = false) {
   const popup = document.createElement("div");
-  popup.className = `popup-message ${isError ? 'error' : 'success'}`;
-  popup.textContent = message;
+  popup.className = `popup-message ${isError ? 'error' : ''}`;
+  popup.innerHTML = `
+    <span>${message}</span>
+    <span class="popup-close">&times;</span>
+  `;
   document.body.appendChild(popup);
   
+  // Close button functionality
+  popup.querySelector(".popup-close").addEventListener("click", () => {
+    popup.remove();
+  });
+  
+  // Auto-hide after 5 seconds
   setTimeout(() => {
     popup.classList.add("show");
     setTimeout(() => {
       popup.classList.remove("show");
-      setTimeout(() => popup.remove(), 500);
-    }, 3000);
-  }, 100);
+      setTimeout(() => popup.remove(), 300);
+    }, 5000);
+  }, 10);
 }
 
-function getPlaceholderImage(type = "card") {
-  const sizes = {
-    featured: "600x400",
-    card: "400x200"
-  };
-  return `https://via.placeholder.com/${sizes[type]}?text=Classic+News`;
-}
-
-function formatDate(dateString) {
-  if (!dateString) return "Today";
-  const options = { year: 'numeric', month: 'short', day: 'numeric' };
-  return new Date(dateString).toLocaleDateString("en-US", options);
-}
-
-function truncateText(text, length) {
-  return text.length > length ? `${text.substring(0, length)}...` : text;
-}
-
-// Initialize Event Listeners
-function initEventListeners() {
-  // Search functionality
-  document.getElementById("searchBtn").addEventListener("click", () => {
-    elements.searchOverlay.classList.add("active");
-    elements.searchInput.focus();
-  });
-
-  document.getElementById("closeSearch").addEventListener("click", () => {
-    elements.searchOverlay.classList.remove("active");
-  });
-
-  document.getElementById("searchSubmitBtn").addEventListener("click", (e) => {
-    e.preventDefault();
-    const query = elements.searchInput.value.trim();
-    if (query) searchNews(query);
-  });
-
-  // Contact functionality
-  document.getElementById("contactBtn").addEventListener("click", () => {
-    elements.contactOverlay.classList.add("active");
-  });
-
-  document.getElementById("closeContact").addEventListener("click", () => {
-    elements.contactOverlay.classList.remove("active");
-  });
-
-  // Load more button
-  elements.loadMoreBtn.addEventListener("click", async () => {
-    currentPage++;
-    const hasMore = await fetchGNews(currentCategory, currentPage);
-    if (!hasMore) {
-      elements.loadMoreBtn.disabled = true;
-      elements.loadMoreBtn.textContent = "No more articles";
+// Contact form submission
+document.getElementById("contactForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const form = e.target;
+  const formData = new FormData(form);
+  const submitBtn = form.querySelector('button[type="submit"]');
+  
+  submitBtn.disabled = true;
+  submitBtn.textContent = "Sending...";
+  
+  try {
+    const response = await fetch(form.action, {
+      method: "POST",
+      body: formData,
+      headers: {
+        'Accept': 'application/json'
+      }
+    });
+    
+    if (response.ok) {
+      showPopup("Message sent successfully!");
+      form.reset();
+      document.getElementById("contactOverlay").classList.remove("active");
+    } else {
+      throw new Error("Failed to send message");
     }
+  } catch (err) {
+    console.error("Form error:", err);
+    showPopup("Failed to send message. Please try again.", true);
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.textContent = "Send Message";
+  }
+});
+
+// Rest of your existing navigation and UI code...
+document.querySelectorAll(".nav-btn, .category-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const category = btn.dataset.category;
+    currentCategory = category;
+    currentPage = 1;
+    sectionTitle.textContent = category.toUpperCase();
+    fetchNews(category, 1);
+    document.querySelectorAll(".nav-btn, .category-btn").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
   });
+});
 
-  // Category buttons
-  document.querySelectorAll(".nav-btn, .category-btn").forEach(btn => {
-    btn.addEventListener("click", () => {
-      currentCategory = btn.dataset.category;
-      currentPage = 1;
-      elements.sectionTitle.textContent = btn.textContent;
-      fetchGNews(currentCategory, 1);
-      document.querySelectorAll(".nav-btn, .category-btn").forEach(b => 
-        b.classList.remove("active"));
-      btn.classList.add("active");
-    });
-  });
-}
+loadMoreBtn.addEventListener("click", () => {
+  currentPage++;
+  fetchNews(currentCategory, currentPage);
+});
 
-// Initialize the app
-function init() {
-  initEventListeners();
-  setupContactForm();
-  fetchGNews(currentCategory);
-}
+// Initial load
+fetchNews(currentCategory, currentPage);
 
-// Start the application
-init();
+// Overlays for search and contact
+document.getElementById("searchBtn").onclick = () => {
+  document.getElementById("searchOverlay").classList.add("active");
+};
+document.getElementById("closeSearch").onclick = () => {
+  document.getElementById("searchOverlay").classList.remove("active");
+};
 
+document.getElementById("contactBtn").onclick = () => {
+  document.getElementById("contactOverlay").classList.add("active");
+};
+document.getElementById("closeContact").onclick = () => {
+  document.getElementById("contactOverlay").classList.remove("active");
+};
 
-// Add this to your script.js
-function initMobileMenu() {
-  const mobileMenuBtn = document.getElementById("mobileMenuBtn");
-  const mobileMenuOverlay = document.getElementById("mobileMenuOverlay");
-  const closeMobileMenu = document.getElementById("closeMobileMenu");
-  const mobileNavBtns = document.querySelectorAll(".mobile-nav-btn");
-
-  // Toggle mobile menu
-  mobileMenuBtn.addEventListener("click", () => {
-    mobileMenuOverlay.classList.add("active");
-  });
-
-  // Close mobile menu
-  closeMobileMenu.addEventListener("click", () => {
-    mobileMenuOverlay.classList.remove("active");
-  });
-
-  // Handle mobile nav clicks
-  mobileNavBtns.forEach(btn => {
-    btn.addEventListener("click", () => {
-      currentCategory = btn.dataset.category;
-      elements.sectionTitle.textContent = btn.textContent;
-      fetchGNews(currentCategory);
-      mobileMenuOverlay.classList.remove("active");
-      
-      // Update active state
-      document.querySelectorAll(".nav-btn, .category-btn, .mobile-nav-btn").forEach(b => 
-        b.classList.remove("active"));
-      btn.classList.add("active");
-    });
-  });
-}
-
-// Call this in your init() function
-function init() {
-  initEventListeners();
-  initMobileMenu(); // Add this line
-  setupContactForm();
-  fetchGNews(currentCategory);
-}
+// Go to top
+const goToTopBtn = document.getElementById("goToTopBtn");
+window.addEventListener("scroll", () => {
+  if (window.scrollY > 300) {
+    goToTopBtn.classList.add("visible");
+  } else {
+    goToTopBtn.classList.remove("visible");
+  }
+});
+goToTopBtn.addEventListener("click", () => {
+  window.scrollTo({ top: 0, behavior: "smooth" });
+});
