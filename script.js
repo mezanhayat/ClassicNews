@@ -78,11 +78,14 @@ function renderNews(articles) {
     const featured = articles[0];
     elements.featuredArticle.innerHTML = `
       <div class="featured-grid">
-        <img src="${featured.image || getPlaceholderImage('featured')}" 
-             alt="${featured.title}" 
-             onerror="this.src='${getPlaceholderImage('featured')}'">
+        <div class="featured-image-container">
+          <img src="${getOptimizedImageUrl(featured.image, 'featured')}" 
+               alt="${featured.title}" 
+               onerror="this.src='${getPlaceholderImage('featured')}'"
+               loading="lazy">
+          <div class="featured-tag">${featured.source?.name || "Source"}</div>
+        </div>
         <div class="featured-content">
-          <div class="featured-tag">${featured.source.name || "Source"}</div>
           <h2>${featured.title}</h2>
           <p>${featured.description || ""}</p>
           <div class="featured-meta">
@@ -96,15 +99,18 @@ function renderNews(articles) {
   }
 
   // Regular articles
+  const newsGridFragment = document.createDocumentFragment();
+  
   articles.slice(1).forEach(article => {
     const card = document.createElement("div");
     card.className = "news-card";
     card.innerHTML = `
       <div class="news-image-container">
-        <img src="${article.image || getPlaceholderImage('card')}" 
+        <img src="${getOptimizedImageUrl(article.image, 'card')}" 
              alt="${article.title}"
-             onerror="this.src='${getPlaceholderImage('card')}'">
-        <div class="news-source-tag">${article.source.name || "Source"}</div>
+             onerror="this.src='${getPlaceholderImage('card')}'"
+             loading="lazy">
+        <div class="news-source-tag">${article.source?.name || "Source"}</div>
       </div>
       <div class="news-content">
         <h3>${article.title}</h3>
@@ -115,8 +121,29 @@ function renderNews(articles) {
         </div>
       </div>
     `;
-    elements.newsGrid.appendChild(card);
+    newsGridFragment.appendChild(card);
   });
+  
+  elements.newsGrid.appendChild(newsGridFragment);
+}
+
+// New helper functions
+function getOptimizedImageUrl(imageUrl, type) {
+  if (!imageUrl) return getPlaceholderImage(type);
+  
+  // If using an image service that supports resizing:
+  // return `${imageUrl}?width=${type === 'featured' ? 800 : 400}&height=300&fit=cover`;
+  
+  return imageUrl; // Fallback to original URL
+}
+
+function getPlaceholderImage(type) {
+  const aspectRatios = {
+    featured: '16/9',
+    card: '4/3'
+  };
+  const color = type === 'featured' ? '6366f1' : '64748b';
+  return `https://placehold.co/${type === 'featured' ? 800 : 400}x${type === 'featured' ? 450 : 300}@${aspectRatios[type]}/${color}/ffffff?text=Classic+News`;
 }
 
 // Error Handling
