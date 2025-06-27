@@ -1,11 +1,180 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <!-- ... your existing head ... -->
+  <!--google adsense-->
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1070763008576125"
+     crossorigin="anonymous"></script>
+  <meta name="google-adsense-account" content="ca-pub-1070763008576125">
+   <!--google adsense-->
+
+  
+  
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Classic News - A News Website</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Source+Sans+Pro:wght@300;400;600;700&display=swap" rel="stylesheet"/>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet"/>
   <link rel="stylesheet" href="styles.css"/>
 </head>
 <body>
-  <!-- Header, Top Bar, Ads, Main Content, Sidebar, Footer... -->
+  <!-- Header -->
+  <header class="header">
+    <div class="container">
+      <div class="top-bar">
+        <div class="top-bar-left">
+          <span class="date" id="currentDate"></span>
+          <span class="separator">|</span>
+          <span class="breaking-news">BREAKING NEWS</span>
+        </div>
+        <div class="top-bar-right">
+          <button class="icon-btn" id="searchBtn">
+            <i class="fas fa-search"></i>
+          </button>
+          <button class="icon-btn" id="contactBtn">
+            <i class="fas fa-envelope"></i>
+          </button>
+        </div>
+      </div>
+      <div class="main-header">
+        <h1 class="site-title">CLASSIC TIMES</h1>
+        <p class="site-tagline">TRUTH • INTEGRITY • EXCELLENCE</p>
+      </div>
+      <nav class="nav">
+        <div class="nav-desktop">
+          <button class="nav-btn active" data-category="general">HOME</button>
+          <button class="nav-btn" data-category="world">INTERNATIONAL</button>
+          <button class="nav-btn" data-category="sports">SPORTS</button>
+          <button class="nav-btn" data-category="technology">TECHNOLOGY</button>
+          <button class="nav-btn" data-category="business">BUSINESS</button>
+          <button class="nav-btn" data-category="entertainment">ENTERTAINMENT</button>
+        </div>
+        <button class="mobile-menu-btn" id="mobileMenuBtn">
+          <i class="fas fa-bars"></i>
+        </button>
+      </nav>
+    </div>
+  </header>
+
+        <!--Google ads-->
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1070763008576125"
+     crossorigin="anonymous"></script>
+<ins class="adsbygoogle"
+     style="display:block"
+     data-ad-format="fluid"
+     data-ad-layout-key="-6a+c7+1p-1j+cx"
+     data-ad-client="ca-pub-1070763008576125"
+     data-ad-slot="7042685333"></ins>
+<script>
+     (adsbygoogle = window.adsbygoogle || []).push({});
+</script>
+        <!--Google ads-->
+  
+  <!-- Main Content -->
+  <main class="main">
+    <div class="container">
+      <div class="content-grid">
+        <!-- News Section -->
+        <div class="news-section">
+          <div class="section-header">
+            <h2 class="section-title" id="sectionTitle">Latest News</h2>
+            <div class="article-count">
+              <span id="articleCount">0</span> articles
+            </div>
+          </div>
+          <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Loading news...</p>
+          </div>
+          <div class="error" id="error" style="display: none;">
+            <p>Failed to load news articles</p>
+            <button class="btn-primary" onclick="location.reload()">Try Again</button>
+          </div>
+          <div class="featured-article" id="featuredArticle" style="display: none;"></div>
+          <div class="news-grid" id="newsGrid"></div>
+          <div class="load-more-container" id="loadMoreContainer" style="display: none;">
+            <button class="btn-primary" id="loadMoreBtn">Load More Articles</button>
+          </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="sidebar">
+          <div class="sidebar-section">
+            <h3 class="sidebar-title">Trending Now</h3>
+            <div class="trending-list" id="trendingList"></div>
+          </div>
+          <div class="sidebar-section">
+            <h3 class="sidebar-title">Categories</h3>
+            <div class="category-list">
+              <button class="category-btn active" data-category="general">General News</button>
+              <button class="category-btn" data-category="world">International</button>
+              <button class="category-btn" data-category="sports">Sports</button>
+              <button class="category-btn" data-category="technology">Technology</button>
+              <button class="category-btn" data-category="business">Business</button>
+              <button class="category-btn" data-category="entertainment">Entertainment</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!--Google ads-->
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1070763008576125"
+     crossorigin="anonymous"></script>
+<!-- classicnews -->
+<ins class="adsbygoogle"
+     style="display:block"
+     data-ad-client="ca-pub-1070763008576125"
+     data-ad-slot="9890827067"
+     data-ad-format="auto"
+     data-full-width-responsive="true"></ins>
+<script>
+     (adsbygoogle = window.adsbygoogle || []).push({});
+</script>
+  <!--Google ads-->
+
+  <!-- Go to Top -->
+  <button class="go-to-top" id="goToTopBtn">
+    <i class="fas fa-arrow-up"></i>
+  </button>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-main">
+          <h3 class="footer-title">Classic Times</h3>
+          <p class="footer-description">
+            Your trusted source for breaking news, in-depth analysis, and comprehensive coverage of global events.
+          </p>
+        </div>
+        <div class="footer-links">
+          <h4 class="footer-section-title">Quick Links</h4>
+          <ul class="footer-link-list">
+            <li><a href="#">About Us</a></li>
+            
+            <li><a href="#">Privacy Policy</a></li>
+            <li><a href="#">Terms of Service</a></li>
+          </ul>
+        </div>
+        <div class="footer-categories">
+          <h4 class="footer-section-title">FOLLOW ME</h4>
+          <ul class="footer-link-list">
+            <i class="fa fa-github-square" style="font-size:36px"><a href="world">GITHUB</a></i>
+            <<i class="fa fa-facebook-square" style="font-size:36px"><a href="sports">FACEBOOK</a></i>
+            <i class="fa fa-instagram" style="font-size:36px"><a href="technology">INSTAGRAM</a></i>
+               <i class="fa fa-linkedin-square" style="font-size:36px"><a href="entertainment">LinkedIn</a></i>
+            <i class="fa fa-youtube-play" style="font-size:36px"><a href="business">YOUTUBE</a></i>
+           
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <center><p>Created by Rehan&co.</p></center>
+        <p>&copy; 2024 Classic Times. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
 
   <!-- Search Overlay -->
   <div class="search-overlay" id="searchOverlay">
@@ -29,8 +198,19 @@
         <h3>Contact Us</h3>
         <button id="closeContact" class="close-btn">&times;</button>
       </div>
-      <form id="contactForm" class="contact-form" action="https://formspree.io/f/mkgbqjoo" method="POST">
-        <!-- form fields -->
+    <form id="contactForm" class="contact-form" action="https://formspree.io/f/mkgbqjoo" method="POST">
+        <div class="form-group">
+          <label for="name">Name</label>
+          <input type="text" name="name" required />
+        </div>
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input type="email" name="email" required />
+        </div>
+        <div class="form-group">
+          <label for="message">Message</label>
+          <textarea name="message" rows="5" required></textarea>
+        </div>
         <button type="submit" class="btn-primary">Send Message</button>
       </form>
     </div>
