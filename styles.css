@@ -881,3 +881,13 @@ body {
   opacity: 1;
   transform: translateY(0);
 }
+
+
+.load-more-container {
+  text-align: center;
+  margin-top: 2rem;
+}
+
+#loadMoreBtn {
+  display: inline-block; /* should not be 'none' */
+}
