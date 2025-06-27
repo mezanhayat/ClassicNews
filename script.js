@@ -3,6 +3,8 @@ let currentCategory = "general";
 let currentPage = 1;
 const pageSize = 12;
 
+
+
 const sectionTitle = document.getElementById("sectionTitle");
 const newsGrid = document.getElementById("newsGrid");
 const featuredArticle = document.getElementById("featuredArticle");
