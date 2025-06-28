@@ -12,6 +12,49 @@
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Source+Sans+Pro:wght@300;400;600;700&display=swap" rel="stylesheet"/>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet"/>
   <link rel="stylesheet" href="styles.css"/>
+  <style>
+    /* Additional styles for centering */
+    .team-highlights {
+      display: flex;
+      justify-content: center;
+      margin: 3rem 0;
+    }
+    
+    .team-member {
+      text-align: center;
+      max-width: 300px;
+    }
+    
+    .member-image {
+      margin: 0 auto;
+    }
+    
+    .member-image img {
+      width: 200px;
+      height: 200px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 3px solid #dc2626;
+    }
+    
+    .contact-modal {
+      max-width: 500px;
+      margin: 0 auto;
+    }
+    
+    .contact-form {
+      width: 100%;
+    }
+    
+    .form-group {
+      text-align: left;
+    }
+    
+    .btn-primary {
+      display: block;
+      margin: 0 auto;
+    }
+  </style>
 </head>
 <body>
   <!-- Header -->
@@ -78,17 +121,19 @@
         <h2>Our Team</h2>
         <p>Classic Times is powered by a diverse team of 10-20 journalists, editors, researchers, and support staff who bring a wealth of experience and perspectives to our newsroom. As a non-profit, every team member is driven by passion rather than profit, united by our shared commitment to public service journalism.</p>
         
-     <center> <div class="team-highlights">
+        <div class="team-highlights">
           <div class="team-member">
             <div class="member-image">
-          <center>    <img src="My.jpg"></center>
-            </div>. </center>
-          <center> <h3>Md Rehanullah</h3>
+              <img src="My.jpg" alt="Md Rehanullah">
+            </div>
+            <h3>Md Rehanullah</h3>
             <p class="position">-CEO</p>
             <p class="position">-Editor-in-Chief</p>
             <p class="position">-Managing Editor</p>
-             <p class="position">-Director of Development</p></center>            
-                     
+            <p class="position">-Director of Development</p>
+          </div>
+        </div>
+        
         <div class="join-team">
           <h3>Join Our Mission</h3>
           <p>As a non-profit, we rely on the support of our readers and community. Whether through donations, volunteering, or simply sharing our work, you can help sustain independent journalism.</p>
@@ -120,7 +165,7 @@
         <div class="footer-categories">
           <h4 class="footer-section-title">FOLLOW US</h4>
           <div class="social-links">
-           <a href="https://github.com/Md-Rehanullah" class="social-link"><i class="fab fa-github"></i> GitHub</a>
+            <a href="https://github.com/Md-Rehanullah" class="social-link"><i class="fab fa-github"></i> GitHub</a>
             <a href="https://www.facebook.com/md.rehanu.9?" class="social-link"><i class="fab fa-facebook"></i> Facebook</a>
             <a href="https://www.instagram.com/md_rehanullah99?igsh=aGNrYm5rNmYyMTl3&utm_source=qr" class="social-link"><i class="fab fa-instagram"></i> Instagram</a>
             <a href="https://x.com/mdrehan_01?s=21" class="social-link"><i class="fab fa-twitter"></i> Twitter</a>
@@ -138,24 +183,24 @@
   <!-- Contact Overlay -->
   <div class="contact-overlay" id="contactOverlay">
     <div class="contact-modal">
-      <div class="contact-header">
+      <div class="contact-header" style="text-align: center;">
         <h3>Contact Us</h3>
         <button id="closeContact" class="close-btn">&times;</button>
       </div>
-      <form id="contactForm" class="contact-form" action="https://formspree.io/f/mkgbqjoo" method="POST">
+      <form id="contactForm" class="contact-form" action="https://formspree.io/f/mkgbqjoo" method="POST" style="margin: 0 auto;">
         <div class="form-group">
           <label for="name">Name</label>
-          <input type="text" name="name" required />
+          <input type="text" name="name" required style="width: 100%;"/>
         </div>
         <div class="form-group">
           <label for="email">Email</label>
-          <input type="email" name="email" required />
+          <input type="email" name="email" required style="width: 100%;"/>
         </div>
         <div class="form-group">
           <label for="message">Message</label>
-          <textarea name="message" rows="5" required></textarea>
+          <textarea name="message" rows="5" required style="width: 100%;"></textarea>
         </div>
-        <button type="submit" class="btn-primary">Send Message</button>
+        <button type="submit" class="btn-primary" style="margin: 20px auto;">Send Message</button>
       </form>
     </div>
   </div>
