@@ -1,5 +1,4 @@
-
-const API_KEY = "d44f128c378c43722a831cc284370e0b";
+console.log("JS Loaded ✅");const API_KEY = "d44f128c378c43722a831cc284370e0b";
 let currentCategory = "general";
 let currentPage = 1;
 const pageSize = 10;
