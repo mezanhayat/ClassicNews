@@ -1,125 +1,78 @@
-const API_KEY = "pub_479521869e790a727903df673ac804ca5f7dc";
-let currentCategory = "general";
-let currentPage = 1;
-const pageSize = 12;
 
-// DOM Elements
-const sectionTitle = document.getElementById("sectionTitle");
+const API_KEY = "d44f128c378c43722a831cc284370e0b";
+let currentPage = 1;
+const pageSize = 10;
+let currentCategory = "general";
+
+// DOM elements
 const newsGrid = document.getElementById("newsGrid");
-const featuredArticle = document.getElementById("featuredArticle");
-const articleCount = document.getElementById("articleCount");
 const loading = document.getElementById("loading");
 const error = document.getElementById("error");
-const loadMoreBtn = document.getElementById("loadMoreBtn");
-const loadMoreContainer = document.getElementById("loadMoreContainer");
-
-// Show today's date
-document.getElementById("currentDate").textContent = new Date().toLocaleDateString('en-US', {
-  weekday: 'long',
-  year: 'numeric',
-  month: 'long',
-  day: 'numeric'
-});
-
-// Fallback news data
-const fallbackNews = {
-  articles: [
-    {
-      title: "Breaking News Updates",
-      url: "#",
-      description: "Stay informed with the latest news coverage from our team.",
-      image: "https://via.placeholder.com/600x400",
-      source: { name: "Classic Times" },
-      publishedAt: new Date().toISOString()
-    },
-    {
-      title: "Important Developments",
-      url: "#",
-      description: "Our journalists are working around the clock to bring you updates.",
-      image: "https://via.placeholder.com/400x200",
-      source: { name: "Classic Times" },
-      publishedAt: new Date().toISOString()
-    }
-  ]
-};
+const articleCount = document.getElementById("articleCount");
 
 async function fetchNews(category = "general", page = 1) {
   loading.style.display = "block";
   error.style.display = "none";
-  loadMoreBtn.disabled = true;
+  newsGrid.innerHTML = "";
 
   try {
-    const validCategories = ["general", "world", "nation", "business", "technology", "entertainment", "sports", "science", "health"];
-    const normalizedCategory = validCategories.includes(category) ? category : "general";
+    const url = new URL("https://gnews.io/api/v4/top-headlines");
+    url.searchParams.append("token", API_KEY);
+    url.searchParams.append("lang", "en");
+    url.searchParams.append("country", "us");
+    url.searchParams.append("max", pageSize.toString());
 
-    const apiUrl = new URL("https://gnews.io/api/v4/top-headlines");
-    apiUrl.searchParams.append("token", API_KEY);
-    apiUrl.searchParams.append("lang", "en");
-    apiUrl.searchParams.append("country", "us");
-    apiUrl.searchParams.append("max", pageSize.toString());
-
-    if (normalizedCategory !== "general") {
-      apiUrl.searchParams.append("topic", normalizedCategory);
+    const validTopics = ["world", "nation", "business", "technology", "entertainment", "sports", "science", "health"];
+    if (validTopics.includes(category)) {
+      url.searchParams.append("topic", category);
     }
 
-    const response = await fetchWithTimeout(apiUrl.toString(), 8000);
+    console.log("Fetching:", url.toString());
+    const response = await fetch(url.toString());
 
     if (!response.ok) {
-      let errorMsg = `HTTP error! Status: ${response.status}`;
-      try {
-        const errorData = await response.json();
-        errorMsg = errorData.message || errorMsg;
-      } catch (e) {}
-      throw new Error(errorMsg);
+      throw new Error(`HTTP error! Status: ${response.status}`);
     }
 
     const data = await response.json();
 
-    if (!data.articles || !Array.isArray(data.articles)) {
-      throw new Error("Invalid data format from API");
+    if (!data.articles || data.articles.length === 0) {
+      throw new Error("No news articles found.");
     }
 
-    const articles = data.articles.filter(a => a.title && a.url);
+    articleCount.textContent = data.articles.length;
 
-    if (articles.length === 0 && page === 1) {
-      throw new Error("No articles found for this category");
-    }
+    data.articles.forEach(article => {
+      const card = document.createElement("div");
+      card.className = "news-card";
+      card.innerHTML = `
+        <div class="news-image-container">
+          <img class="news-image" src="${article.image || 'https://via.placeholder.com/300x200'}" alt="News Image">
+        </div>
+        <div class="news-content">
+          <h3 class="news-title">${article.title}</h3>
+          <p class="news-description">${article.description || ''}</p>
+          <div class="news-footer">
+            <span class="news-date">${new Date(article.publishedAt).toLocaleDateString()}</span>
+            <a href="${article.url}" target="_blank" class="read-more-btn">Read More</a>
+          </div>
+        </div>
+      `;
+      newsGrid.appendChild(card);
+    });
 
-    renderNews({ articles }, normalizedCategory, page);
   } catch (err) {
-    console.error("News fetch error:", err);
+    console.error(err);
     error.style.display = "block";
     error.innerHTML = `
-      <p>${err.message.includes("422") ? "GNews API request error" : "Failed to load news"}</p>
+      <p>Failed to load news</p>
       <p><small>${err.message}</small></p>
-      <button class="btn-primary" onclick="fetchNews(currentCategory, 1)">Try Again</button>
     `;
-    renderNews(fallbackNews, category, page);
   } finally {
     loading.style.display = "none";
-    loadMoreBtn.disabled = false;
   }
 }
 
-async function fetchWithTimeout(url, timeout) {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeout);
-
-  try {
-    const response = await fetch(url, {
-      signal: controller.signal,
-      headers: { 'Accept': 'application/json' }
-    });
-    clearTimeout(timeoutId);
-    return response;
-  } catch (err) {
-    clearTimeout(timeoutId);
-    throw err;
-  }
-}
-
-// Add your existing renderNews, renderNewsCards, etc.
-
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener("DOMContentLoaded", () => {
   fetchNews(currentCategory, currentPage);
 });
