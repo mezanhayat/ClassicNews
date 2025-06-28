@@ -1,8 +1,7 @@
-
 const API_KEY = "d44f128c378c43722a831cc284370e0b";
 let currentPage = 1;
-const pageSize = 10;
 let currentCategory = "general";
+const pageSize = 10;
 
 // DOM elements
 const newsGrid = document.getElementById("newsGrid");
@@ -10,7 +9,9 @@ const loading = document.getElementById("loading");
 const error = document.getElementById("error");
 const articleCount = document.getElementById("articleCount");
 
-async function fetchNews(category = "general", page = 1) {
+const GNEWS_TOPICS = ["world", "nation", "business", "technology", "entertainment", "sports", "science", "health"];
+
+async function fetchNews(category = "general") {
   loading.style.display = "block";
   error.style.display = "none";
   newsGrid.innerHTML = "";
@@ -22,8 +23,7 @@ async function fetchNews(category = "general", page = 1) {
     url.searchParams.append("country", "us");
     url.searchParams.append("max", pageSize.toString());
 
-    const validTopics = ["world", "nation", "business", "technology", "entertainment", "sports", "science", "health"];
-    if (validTopics.includes(category)) {
+    if (GNEWS_TOPICS.includes(category)) {
       url.searchParams.append("topic", category);
     }
 
@@ -62,7 +62,7 @@ async function fetchNews(category = "general", page = 1) {
     });
 
   } catch (err) {
-    console.error(err);
+    console.error("News fetch error:", err.message);
     error.style.display = "block";
     error.innerHTML = `
       <p>Failed to load news</p>
@@ -74,5 +74,5 @@ async function fetchNews(category = "general", page = 1) {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-  fetchNews(currentCategory, currentPage);
+  fetchNews(currentCategory);
 });
