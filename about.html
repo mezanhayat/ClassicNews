@@ -24,12 +24,7 @@
           <span class="breaking-news">BREAKING NEWS</span>
         </div>
         <div class="top-bar-right">
-          <button class="icon-btn" id="searchBtn">
-            <i class="fas fa-search"></i>
-          </button>
-          <button class="icon-btn" id="contactBtn">
-            <i class="fas fa-envelope"></i>
-          </button>
+          <!-- Removed search and mail icons -->
         </div>
       </div>
       <div class="main-header">
@@ -86,22 +81,34 @@
         <div class="team-highlights">
           <div class="team-member">
             <div class="member-image">
-              <img src="My.jpg">
+              <img src="https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?ixlib=rb-1.2.1&auto=format&fit=crop&w=200&q=80" alt="Editor-in-Chief">
             </div>
-            <h3>Md Rehanullah</h3>
-              
-            <p class="position">-CEO</p>
-            <p class="position">-Editor-in-Chief</p>
-            <p class="position">-Director of Development</p>
-            <p class="position">-Maneging Editores</p>
+            <h3>Sarah Johnson</h3>
+            <p class="position">Editor-in-Chief</p>
+            <p class="bio">20+ years in investigative journalism, leads our editorial vision.</p>
           </div>
-          
-         
+          <div class="team-member">
+            <div class="member-image">
+              <img src="https://images.unsplash.com/photo-1560250097-0b93528c311a?ixlib=rb-1.2.1&auto=format&fit=crop&w=200&q=80" alt="Managing Editor">
+            </div>
+            <h3>Michael Chen</h3>
+            <p class="position">Managing Editor</p>
+            <p class="bio">Oversees our daily operations and editorial workflow.</p>
+          </div>
+          <div class="team-member">
+            <div class="member-image">
+              <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?ixlib=rb-1.2.1&auto=format&fit=crop&w=200&q=80" alt="Director of Development">
+            </div>
+            <h3>Emily Rodriguez</h3>
+            <p class="position">Director of Development</p>
+            <p class="bio">Leads our fundraising and community partnerships.</p>
+          </div>
+        </div>
         
         <div class="join-team">
           <h3>Join Our Mission</h3>
           <p>As a non-profit, we rely on the support of our readers and community. Whether through donations, volunteering, or simply sharing our work, you can help sustain independent journalism.</p>
-          <a href="#contactOverlay" class="btn-primary" id="contactUsBtn">Contact Us</a>
+          <button class="btn-primary" id="contactUsBtn">Contact Us</button>
         </div>
       </section>
     </div>
@@ -120,7 +127,6 @@
         <div class="footer-links">
           <h4 class="footer-section-title">Quick Links</h4>
           <ul class="footer-link-list">
-            <li><a href="index.html">Home</a></li>
             <li><a href="about.html">About Us</a></li>
             <li><a href="privacy.html">Privacy Policy</a></li>
             <li><a href="terms.html">Terms of Service</a></li>
@@ -129,11 +135,11 @@
         <div class="footer-categories">
           <h4 class="footer-section-title">FOLLOW US</h4>
           <div class="social-links">
-           <a href="https://github.com/Md-Rehanullah" class="social-link"><i class="fab fa-github"></i> GitHub</a>
-            <a href="https://www.facebook.com/md.rehanu.9?" class="social-link"><i class="fab fa-facebook"></i> Facebook</a>
-            <a href="https://www.instagram.com/md_rehanullah99?igsh=aGNrYm5rNmYyMTl3&utm_source=qr" class="social-link"><i class="fab fa-instagram"></i> Instagram</a>
-            <a href="https://x.com/mdrehan_01?s=21" class="social-link"><i class="fab fa-twitter"></i> Twitter</a>
-            <a href="https://youtube.com/@code_with_me_99?si=F_holzBPHu-h2de2" class="social-link"><i class="fab fa-youtube"></i> YouTube</a>
+            <a href="#" class="social-link"><i class="fab fa-github"></i> GitHub</a>
+            <a href="#" class="social-link"><i class="fab fa-facebook"></i> Facebook</a>
+            <a href="#" class="social-link"><i class="fab fa-instagram"></i> Instagram</a>
+            <a href="#" class="social-link"><i class="fab fa-linkedin"></i> LinkedIn</a>
+            <a href="#" class="social-link"><i class="fab fa-youtube"></i> YouTube</a>
           </div>
         </div>
       </div>
@@ -143,21 +149,6 @@
       </div>
     </div>
   </footer>
-
-  <!-- Search Overlay -->
-  <div class="search-overlay" id="searchOverlay">
-    <div class="search-modal">
-      <div class="search-header">
-        <h3>Search News</h3>
-        <button id="closeSearch" class="close-btn">&times;</button>
-      </div>
-      <div class="search-input-container">
-        <input type="text" id="searchInput" placeholder="Search for news..." />
-        <button id="searchSubmitBtn" class="search-submit-btn">🔍</button>
-      </div>
-      <div id="searchResults" class="search-results"></div>
-    </div>
-  </div>
 
   <!-- Contact Overlay -->
   <div class="contact-overlay" id="contactOverlay">
@@ -184,6 +175,54 @@
     </div>
   </div>
 
-  <script src="script.js"></script>
+  <script>
+    // Set current date
+    document.getElementById('currentDate').textContent = new Date().toLocaleDateString('en-US', { 
+      weekday: 'long', 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    });
+
+    // Contact form functionality
+    const contactBtn = document.getElementById('contactUsBtn');
+    const contactOverlay = document.getElementById('contactOverlay');
+    const closeContact = document.getElementById('closeContact');
+    const contactForm = document.getElementById('contactForm');
+
+    contactBtn.addEventListener('click', () => {
+      contactOverlay.classList.add('active');
+    });
+
+    closeContact.addEventListener('click', () => {
+      contactOverlay.classList.remove('active');
+    });
+
+    contactForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const formData = new FormData(contactForm);
+      
+      try {
+        const response = await fetch(contactForm.action, {
+          method: 'POST',
+          body: formData,
+          headers: {
+            'Accept': 'application/json'
+          }
+        });
+
+        if (response.ok) {
+          alert('Message sent successfully!');
+          contactForm.reset();
+          contactOverlay.classList.remove('active');
+        } else {
+          throw new Error('Failed to send message');
+        }
+      } catch (err) {
+        alert('Failed to send message. Please try again.');
+        console.error(err);
+      }
+    });
+  </script>
 </body>
 </html>
