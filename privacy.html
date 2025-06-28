@@ -24,19 +24,13 @@
           <span class="breaking-news">BREAKING NEWS</span>
         </div>
         <div class="top-bar-right">
-          <button class="icon-btn" id="searchBtn">
-            <i class="fas fa-search"></i>
-          </button>
-          <button class="icon-btn" id="contactBtn">
-            <i class="fas fa-envelope"></i>
-          </button>
+          <!-- Search and mail buttons removed -->
         </div>
       </div>
       <div class="main-header">
         <h1 class="site-title">CLASSIC TIMES</h1>
         <p class="site-tagline">TRUTH • INTEGRITY • EXCELLENCE</p>
       </div>
-     
     </div>
   </header>
 
@@ -100,13 +94,13 @@
       
       <section class="policy-section">
         <h2>7. Contact Us</h2>
-        <p>If you have questions about this Privacy Policy, please contact us through our contact form.</p>
+        <p>If you have questions about this Privacy Policy, please visit our <a href="index.html">homepage</a> and use the contact options there.</p>
       </section>
     </div>
   </main>
 
   <!-- Footer -->
-   <footer class="footer">
+  <footer class="footer">
     <div class="container">
       <div class="footer-grid">
         <div class="footer-main">
@@ -142,12 +136,14 @@
     </div>
   </footer>
 
-  <!-- Same overlays as index.html -->
-  <!-- Search Overlay -->
- 
-
-  <!-- Contact Overlay -->
- 
-
+  <script>
+    // Set current date
+    document.getElementById('currentDate').textContent = new Date().toLocaleDateString('en-US', { 
+      weekday: 'long', 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    });
+  </script>
 </body>
 </html>
