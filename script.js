@@ -96,7 +96,7 @@ function updateActiveButtons(category) {
     "technology": "Technology News",
     "business": "Business News",
     "entertainment": "Entertainment News"
-     };
+  };
   
   sectionTitle.textContent = categoryTitles[category] || "Latest News";
 }
